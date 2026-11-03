@@ -10,7 +10,7 @@ Python · Open Source · Local AI · Privacy First
 
 ## The idea
 
-I've wanted to build my own AI assistant for a long time.
+I've always wanted to build my own AI assistant for a long time.
 
 Not just another chatbot that answers questions. I wanted something that could actually interact with my computer, help me get things done, and make everyday tasks a little easier.
 
@@ -95,55 +95,6 @@ I'm still researching the rest of the architecture, especially the local AI mode
 One thing I want to avoid is building everything at once.
 
 I'd rather start with something small that actually works, then gradually expand it.
-
-### Development roadmap
-
-**Phase 1 — The foundation**
-
-- [ ] Set up the Python project structure
-- [ ] Research and test local language models
-- [ ] Build a basic assistant interface
-- [ ] Implement a simple conversation system
-- [ ] Get the first local prototype running
-
-**Phase 2 — Desktop integration**
-
-- [ ] Add basic application controls
-- [ ] Implement a tool and command system
-- [ ] Add file interaction with permission checks
-- [ ] Support simple desktop automation
-
-**Phase 3 — Making it useful**
-
-- [ ] Explore persistent memory
-- [ ] Improve context handling
-- [ ] Add configurable tools
-- [ ] Experiment with voice interaction
-- [ ] Improve performance and resource usage
-
-**Phase 4 — Phoenix v1.0**
-
-- [ ] Create a clean desktop interface
-- [ ] Improve reliability and security
-- [ ] Write proper installation documentation
-- [ ] Test supported operating systems
-- [ ] Prepare the first stable release
-
-**Target: 2027**, although I'd rather release something that works than rush an unfinished version.
-
----
-
-## Current progress
-
-Right now, Phoenix is in its early stages.
-
-The concept is there, but most of the actual implementation is still ahead of me.
-
-I'll use this repository to document the development process, including experiments, code, problems, and things I learn along the way.
-
-I'm sure I'll change parts of the plan as I figure out what works and what doesn't.
-
-That's part of the project.
 
 ---
 
