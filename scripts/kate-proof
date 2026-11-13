@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+import argparse
+import signal
+import threading
+from pathlib import Path
+
+from phoenix.desktop import append_kate
+from phoenix.files import Files
+
+parser = argparse.ArgumentParser(description="Run the disposable KDE keyboard proof.")
+parser.add_argument("file", type=Path)
+parser.add_argument("--stop-after-capture", action="store_true")
+options = parser.parse_args()
+target = options.file.resolve(strict=True)
+stop = threading.Event()
+signal.signal(signal.SIGINT, lambda *_: stop.set())
+
+
+def status(message):
+    print(message, flush=True)
+    if options.stop_after_capture and message.startswith("Captured"):
+        stop.set()
+files = Files({"demo": target.parent})
+try:
+    print(append_kate(files, "demo", target.name, "phoenix portal proof",
+                      stop, status))
+except RuntimeError as exc:
+    if not stop.is_set():
+        raise
+    print(f"{exc} Session closed.")
+finally:
+    files.close()

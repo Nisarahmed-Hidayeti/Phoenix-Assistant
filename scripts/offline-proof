@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ $# -ne 2 ]]; then
+  echo "Usage: scripts/offline-proof MODEL.gguf NEW_FIXTURE_DIRECTORY" >&2
+  exit 2
+fi
+export PYTHONPATH="$PWD"
+export PHOENIX_API_KEY="${PHOENIX_API_KEY:-$(openssl rand -hex 32)}"
+export PHOENIX_PORT=8080 PHOENIX_SERVER=http://127.0.0.1:8080
+exec unshare -Urn bash -eu -c '
+  ip link set lo up
+  ip -brief link
+  mkdir -p .local
+  stats=$(mktemp -d .local/phoenix-stats.XXXXXX)
+  echo "Measurements: $stats"
+  scripts/start-model "$1" >"$stats/server.log" 2>&1 &
+  model_pid=$!
+  gpu_pid=""
+  trap '\''kill "$model_pid" ${gpu_pid:+"$gpu_pid"} 2>/dev/null || true; wait || true'\'' EXIT
+  if command -v nvidia-smi >/dev/null; then
+    nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -lms 200 >"$stats/vram.mib" &
+    gpu_pid=$!
+  fi
+  for _ in {1..100}; do
+    if curl -fsS --max-time 1 "$PHOENIX_SERVER/health" >/dev/null 2>&1; then break; fi
+    kill -0 "$model_pid" 2>/dev/null || { cat "$stats/server.log"; exit 1; }
+    sleep .2
+  done
+  curl -fsS --max-time 2 "$PHOENIX_SERVER/health" >/dev/null
+  scripts/invoice-proof "$2"
+  awk "/VmHWM/ {print \"Model peak RSS:\", \$2, \$3}" "/proc/$model_pid/status"
+  if [[ -s "$stats/vram.mib" ]]; then
+    awk "NR == 1 {base=\$1} \$1 > max {max=\$1} END {print \"GPU VRAM baseline and peak (MiB):\",base,max}" "$stats/vram.mib"
+  fi
+' bash "$@"

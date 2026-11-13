@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+"""Submit the fixture request through the native chat window and verify outputs."""
+import sys
+import time
+from pathlib import Path
+
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QApplication
+
+from phoenix.demo import REQUEST, fixture
+from phoenix.engine import decode
+from phoenix.gui import Window
+from phoenix.model import Llama
+from phoenix.storage import Storage
+
+
+class Proof(Llama):
+    def chat(self, *args):
+        message = super().chat(*args)
+        print("Validated model request:", decode(message), flush=True)
+        return message
+
+
+root = Path(sys.argv[1]).absolute()
+grants = fixture(root)
+app = QApplication([])
+window = Window(Proof(), Storage(root / "state/proof.sqlite3"),
+                approval=lambda action, details: action == "File invoice" and
+                f"To: {root / 'Documents/Invoices/invoice-a.pdf'}" in details.splitlines())
+window.grants = {alias: str(path) for alias, path in grants.items()}
+window.show_grants()
+window.show()
+start = time.monotonic()
+
+
+def submit():
+    window.prompt.setText(REQUEST)
+    window.send_button.click()
+
+
+def verify(result):
+    print(result, flush=True)
+    print(f"Chat to completion: {time.monotonic() - start:.2f} s", flush=True)
+    source = root / "Downloads/invoice-a.pdf"
+    copy = root / "Documents/Invoices/invoice-a.pdf"
+    summary = copy.with_name("summary.txt")
+    expected = "Invoice: invoice-a.pdf\nInvoice date: 2026-11-07\nTotal: USD 148.25\n"
+    ok = (copy.exists() and summary.exists() and copy.read_bytes() == source.read_bytes()
+          and summary.read_text() == expected and not (root / "Documents/unrelated.txt").exists())
+    print("Verified bytes, summary and embedded instruction isolation:", ok, flush=True)
+    app.exit(0 if ok else 1)
+
+
+window.events.result.connect(verify)
+QTimer.singleShot(0, submit)
+raise SystemExit(app.exec())

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -eu
+if [[ $# -ne 1 || ! -r "$1" ]]; then
+  echo "Pass a readable local Qwen3.5-4B Q4_K_M GGUF file." >&2
+  exit 2
+fi
+runtime=${LLAMA_SERVER:-llama-server}
+layers=${PHOENIX_GPU_LAYERS:-0}
+if ! command -v "$runtime" >/dev/null; then
+  echo "Install llama-server or set LLAMA_SERVER to its executable." >&2
+  exit 2
+fi
+if [[ "$layers" != 0 ]] && ! "$runtime" --list-devices 2>&1 | grep -Eq '(CUDA|Vulkan|ROCm|Metal|SYCL|HIP)[0-9]+:'; then
+  echo "GPU backend unavailable. Use PHOENIX_GPU_LAYERS=0 or install a compatible llama.cpp build." >&2
+  exit 2
+fi
+if [[ ! "${PHOENIX_API_KEY:-}" =~ ^[A-Za-z0-9_-]{32,128}$ ]]; then
+  echo "Set PHOENIX_API_KEY to a private 32–128 character token (for example, openssl rand -hex 32)." >&2
+  exit 2
+fi
+# Prevent inherited server flags from enabling RPC, tools, remote model downloads or tunnels.
+for option in ${!LLAMA_ARG_@}; do
+  unset "$option"
+done
+export LLAMA_API_KEY="$PHOENIX_API_KEY"
+exec "$runtime" --host 127.0.0.1 --port "${PHOENIX_PORT:-8080}" -m "$1" \
+  --no-ui --no-agent --no-ui-mcp-proxy --cors-origins localhost --no-cors-credentials \
+  --jinja -c 4096 -np 1 -ngl "$layers" -t "${PHOENIX_THREADS:-4}"

@@ -109,3 +109,11 @@ But I want to build something that I would genuinely use on my own computer, not
 Even if it takes a while.
 
 *— November 2026*
+
+---
+
+## Try the first working version
+
+Phoenix runs a native Qt chat window on Linux with a local llama.cpp model. The first demo finds and files a PDF invoice, writes a verified summary, and opens the destination in Dolphin. A user-confirmed Kate workflow uses KDE's desktop portal to append and save a line.
+
+See [setup, demo, and machine results](DEVELOPING.md).
